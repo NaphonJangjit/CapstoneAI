@@ -39,21 +39,49 @@ public class NovelService {
     // ---- Search ------------------------------------------------------------
 
     /**
-     * Search for chapters similar to the average embedding of a given novel.
+     * Search for novels similar to a given novel by querying each chapter
+     * individually and aggregating the results (best score per novel).
+     *
+     * <p>This per-chapter approach preserves the semantic richness of each
+     * chapter rather than collapsing everything into a single average vector.
      */
     public CompletableFuture<List<VectorStore.ScoredEntry>> searchByNovel(long novelId, int topK) {
-        float[] avg = store.getNovelAverage(novelId);
-        if (avg == null) {
+        List<VectorStore.Entry> chapters = store.getByNovel(novelId);
+        if (chapters.isEmpty()) {
             return CompletableFuture.completedFuture(List.of());
         }
-        return CompletableFuture.supplyAsync(() -> {
-            // Exclude chapters from the query novel itself
-            Set<VectorStore.Key> exclude = new HashSet<>();
-            for (var ch : store.getByNovel(novelId)) {
-                exclude.add(new VectorStore.Key(ch.novelId(), ch.chapter()));
-            }
-            return store.search(avg, topK, exclude);
-        });
+
+        // Exclude all chapters from the query novel itself
+        Set<VectorStore.Key> exclude = new HashSet<>();
+        for (var ch : chapters) {
+            exclude.add(new VectorStore.Key(ch.novelId(), ch.chapter()));
+        }
+
+        // Search with each chapter's vector in parallel
+        List<CompletableFuture<List<VectorStore.ScoredEntry>>> futures = new ArrayList<>(chapters.size());
+        for (var ch : chapters) {
+            futures.add(CompletableFuture.supplyAsync(() ->
+                    store.search(ch.vector(), topK, exclude)));
+        }
+
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                .thenApply(v -> {
+                    // Aggregate: keep the highest-scoring result per novel
+                    Map<Long, VectorStore.ScoredEntry> bestByNovel = new LinkedHashMap<>();
+                    for (var future : futures) {
+                        for (var se : future.join()) {
+                            long nid = se.entry().novelId();
+                            VectorStore.ScoredEntry existing = bestByNovel.get(nid);
+                            if (existing == null || se.score() > existing.score()) {
+                                bestByNovel.put(nid, se);
+                            }
+                        }
+                    }
+                    return bestByNovel.values().stream()
+                            .sorted(Comparator.comparingDouble(VectorStore.ScoredEntry::score).reversed())
+                            .limit(topK)
+                            .toList();
+                });
     }
 
     /**

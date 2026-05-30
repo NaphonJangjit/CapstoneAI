@@ -138,28 +138,6 @@ public class SolrVectorStore implements VectorStore {
     }
 
     @Override
-    public float[] getNovelAverage(long novelId) {
-        List<Entry> chapters = getByNovel(novelId);
-        if (chapters.isEmpty()) return null;
-
-        float[] avg = new float[dim];
-        for (Entry ch : chapters) {
-            float[] v = ch.vector();
-            for (int i = 0; i < dim; i++) avg[i] += v[i];
-        }
-        double norm = 0.0;
-        for (int i = 0; i < dim; i++) {
-            avg[i] /= chapters.size();
-            norm += (double) avg[i] * avg[i];
-        }
-        norm = Math.sqrt(norm);
-        if (norm > 0) {
-            for (int i = 0; i < dim; i++) avg[i] /= norm;
-        }
-        return avg;
-    }
-
-    @Override
     public List<ScoredEntry> search(float[] queryVector, int k, Set<Key> excludeKeys) {
         // Build KNN query: {!knn f=embedding topK=K}[v0,v1,...,vN]
         StringBuilder knn = new StringBuilder("{!knn f=embedding topK=").append(k).append("}");

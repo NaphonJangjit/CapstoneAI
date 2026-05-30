@@ -75,12 +75,6 @@ public interface VectorStore extends AutoCloseable {
     List<Entry> getByNovel(long novelId);
 
     /**
-     * Average embedding across all chapters of a novel (L2-normalized),
-     * or null if the novel has no indexed chapters.
-     */
-    float[] getNovelAverage(long novelId);
-
-    /**
      * K-nearest neighbors by cosine similarity.
      * @param excludeKeys entries matching these keys are excluded from results.
      */
