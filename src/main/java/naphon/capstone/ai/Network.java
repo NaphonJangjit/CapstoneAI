@@ -10,8 +10,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class Network implements AutoCloseable {
 
@@ -30,7 +28,6 @@ public class Network implements AutoCloseable {
 
     private final OrtEnvironment env;
     private final OrtSession session;
-    private final ExecutorService executors;
 
     public Network(String modelPath) throws OrtException {
         env = OrtEnvironment.getEnvironment();
@@ -40,7 +37,6 @@ public class Network implements AutoCloseable {
         opts.setIntraOpNumThreads(2);
         opts.addCPU(true);
         session = env.createSession(modelPath, opts);
-        executors = Executors.newFixedThreadPool(WORKERS);
     }
 
     /**
@@ -103,7 +99,6 @@ public class Network implements AutoCloseable {
 
     @Override
     public void close() throws OrtException {
-        executors.shutdown();
         session.close();
         env.close();
     }

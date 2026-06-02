@@ -44,17 +44,6 @@ public class ThreadPoolEmbeddingService implements EmbeddingService {
     }
 
     @Override
-    public CompletableFuture<float[][]> embedBatch(String... texts) {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                return embedBatchBlocking(texts);
-            } catch (Exception e) {
-                throw new CompletionException(e);
-            }
-        }, executor);
-    }
-
-    @Override
     public float[] embedBlocking(String text) {
         int[] ids = tokenizer.tokenizeAsId(text);
         if (ids.length > maxSeqLen) {
@@ -67,33 +56,6 @@ public class ThreadPoolEmbeddingService implements EmbeddingService {
             return network.embedSingle(longIds);
         } catch (Exception e) {
             throw new RuntimeException("Embedding failed", e);
-        }
-    }
-
-    @Override
-    public float[][] embedBatchBlocking(String... texts) {
-        // Concatenate all token sequences
-        int totalTokens = 0;
-        int[][] allIds = new int[texts.length][];
-        for (int i = 0; i < texts.length; i++) {
-            int[] ids = tokenizer.tokenizeAsId(texts[i]);
-            if (ids.length > maxSeqLen) ids = Arrays.copyOf(ids, maxSeqLen);
-            allIds[i] = ids;
-            totalTokens += ids.length;
-        }
-
-        long[] flatIds = new long[totalTokens];
-        long[] offsets = new long[texts.length];
-        int pos = 0;
-        for (int i = 0; i < texts.length; i++) {
-            for (int id : allIds[i]) flatIds[pos++] = id;
-            offsets[i] = pos;
-        }
-
-        try {
-            return network.embed(flatIds, offsets);
-        } catch (Exception e) {
-            throw new RuntimeException("Batch embedding failed", e);
         }
     }
 

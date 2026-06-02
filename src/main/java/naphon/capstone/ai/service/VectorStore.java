@@ -7,8 +7,7 @@ import java.util.*;
 /**
  * Storage and similarity search for chapter embeddings.
  *
- * Implementations: {@link InMemoryVectorStore} (dev/test),
- * {@link SolrVectorStore} (production — Apache Solr with dense vector KNN).
+ * Implementation: {@link SolrVectorStore} (production — Apache Solr with dense vector KNN).
  */
 public interface VectorStore extends AutoCloseable {
 

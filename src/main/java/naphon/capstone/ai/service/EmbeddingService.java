@@ -17,14 +17,6 @@ public interface EmbeddingService extends AutoCloseable {
      */
     CompletableFuture<float[]> embed(String text);
 
-    /**
-     * Encode a batch of texts asynchronously.
-     */
-    CompletableFuture<float[][]> embedBatch(String... texts);
-
     /** Blocking encode — use only from worker threads. */
     float[] embedBlocking(String text) throws OrtException;
-
-    /** Blocking batch encode — use only from worker threads. */
-    float[][] embedBatchBlocking(String... texts) throws OrtException;
 }

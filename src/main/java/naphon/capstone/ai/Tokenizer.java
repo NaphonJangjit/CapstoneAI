@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 
 public class Tokenizer {
 
@@ -30,11 +29,6 @@ public class Tokenizer {
             return new Tokenizer(in.readAllBytes());
         }
     }
-
-    public List<String> tokenize(String sentence) {
-        return tokenizer.tokenize(sentence);
-    }
-
 
     public int[] tokenizeAsId(String sentence) {
         return tokenizer.getProcessor().encode(sentence);
